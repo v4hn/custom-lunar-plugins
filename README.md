@@ -1,8 +1,8 @@
 Custom Plugins for the Lunar Package Management System
-------------------------------------------------------
+======================================================
 
 verify-addchecksum.plugin
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 Install by copying the file to /var/lib/lunar/plugins.
 
