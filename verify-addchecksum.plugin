@@ -1,0 +1,62 @@
+#!/bin/bash
+#############################################################
+#                                                           #
+# verify-addchecksum.plugin - plugin to automatically add cs#
+#                                                           #
+#############################################################
+#                                                           #
+# Copyright 2012 by v4hn @ v4hn.de under GPLv2              #
+#                                                           #
+#############################################################
+
+# $1 - MODULE
+# $2 - SOURCE
+get_source_number() {
+  local i SOURCEi
+  (
+    run_details $1
+    if [[ "$SOURCE" == "$2" ]]; then
+      echo ""
+      return
+    fi
+    i=2
+    SOURCEi=$(eval echo $`echo SOURCE$i`)
+    while [[ -n "${SOURCEi}" ]]; do
+      if [[ "${SOURCEi}" == "$2" ]]; then
+        echo $i
+        return
+      fi
+      let i++
+      SOURCEi=$(eval echo $`echo SOURCE$i`)
+    done
+  )
+}
+
+plugin_source_verify_addchecksum() {
+  local TMP_HASH DETAILS_FILE
+  # check if we can handle this type of VFY:
+  if [[ -n "${2}" && "${2}" != "sha256:" ]]; then
+    return 2
+  fi
+  debug_msg "plugin_source_verify_addchecksum ($@)"
+  TMP_HASH=$(sha256sum $SOURCE_CACHE/$1 | cut -d " " -f 1-1)
+
+  message "${PROBLEM_COLOR}! No checksum available for ${DEFAULT_COLOR}${FILE_COLOR}$1${DEFAULT_COLOR}"
+  message "Downloaded file has checksum 'sha256:$TMP_HASH'"
+
+  #MODULE_DIR="$MOONBASE/$(find_section $MODULE)/$MODULE"
+  if [[ -e "$SCRIPT_DIRECTORY/DETAILS.$PLATFORM" ]]; then
+    DETAILS_FILE="$SCRIPT_DIRECTORY/DETAILS.$PLATFORM"
+  else
+    DETAILS_FILE="$SCRIPT_DIRECTORY/DETAILS"
+  fi
+
+  sed -i "s@\(SOURCE`get_source_number $MODULE $1`_VFY\)=.*@\1=sha256:$TMP_HASH@" $DETAILS_FILE
+  message "This was added to $DETAILS_FILE"
+  message "Reload the file to make sure you got a verifiable checksum!"
+
+  return 1
+}
+
+
+plugin_register SOURCE_VERIFY plugin_source_verify_addchecksum
